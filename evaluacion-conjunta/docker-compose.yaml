@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  cockroach1:
+    image: cockroachdb/cockroach:latest
+    container_name: crdb-node1
+    hostname: crdb-node1
+    ports:
+      - "26257:26257"  # SQL
+      - "8080:8080"    # UI
+    volumes:
+      - cockroach1:/cockroach/cockroach-data
+    command: start-single-node --insecure --advertise-addr=crdb-node1
+    networks:
+      - cockroachnet
+
+  cockroach2:
+    image: cockroachdb/cockroach:latest
+    container_name: crdb-node2
+    hostname: crdb-node2
+    ports:
+      - "26258:26257"
+      - "8081:8080"
+    volumes:
+      - cockroach2:/cockroach/cockroach-data
+    command: start --insecure --join=crdb-node1 --advertise-addr=crdb-node2
+    networks:
+      - cockroachnet
+    depends_on:
+      - cockroach1
+
+  cockroach3:
+    image: cockroachdb/cockroach:latest
+    container_name: crdb-node3
+    hostname: crdb-node3
+    ports:
+      - "26259:26257"
+      - "8082:8080"
+    volumes:
+      - cockroach3:/cockroach/cockroach-data
+    command: start --insecure --join=crdb-node1 --advertise-addr=crdb-node3
+    networks:
+      - cockroachnet
+    depends_on:
+      - cockroach1
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # Para la app
+      - "15672:15672"  # UI web
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - cockroachnet
+
+volumes:
+  cockroach1:
+  cockroach2:
+  cockroach3:
+  rabbitmq-data:
+
+networks:
+  cockroachnet:
+    driver: bridge

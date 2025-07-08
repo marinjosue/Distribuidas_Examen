@@ -1,0 +1,85 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            # Sensor Service
+            - id: sensor-service
+              uri: lb://sensor-data-collector
+              predicates:
+                - Path=/api/conjunta/2p/sensor-readings/**
+              filters:
+                - RewritePath=/api/conjunta/2p/sensor-readings/(?<remaining>.*), /sensor-readings/${remaining}
+                - AddResponseHeader=X-Routed-By, API-Gateway
+            
+            # Analyzer Service
+            - id: analyzer-service
+              uri: lb://environmental-analyzer
+              predicates:
+                - Path=/api/conjunta/2p/alerts/**
+              filters:
+                - RewritePath=/api/conjunta/2p/alerts/(?<remaining>.*), /alerts/${remaining}
+                - AddResponseHeader=X-Routed-By, API-Gateway
+            
+            # Notification Service
+            - id: notification-service
+              uri: lb://notification-dispatcher
+              predicates:
+                - Path=/api/conjunta/2p/notifications/**
+              filters:
+                - RewritePath=/api/conjunta/2p/notifications/(?<remaining>.*), /notifications/${remaining}
+                - AddResponseHeader=X-Routed-By, API-Gateway
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                exposedHeaders:
+                  - X-Routed-By
+                max-age: 3600
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true  # Changed from 'access: ADMIN' to 'enabled: true'
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.route.RouteDefinitionLocator: DEBUG
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG
+    org.springframework.web: TRACE
+    org.springframework.http: TRACE
+    reactor.netty.http.client: DEBUG
+    reactor.netty: DEBUG

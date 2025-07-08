@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.eval.conjunta</groupId>
+    <artifactId>microservicios-conjunta</artifactId>
+    <version>1.0.0</version>
+    <name>microservicios-conjunta</name>
+    <description>microservicios nrc 22747</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>sensor</module>
+        <module>notification</module>
+        <module>gateway</module>
+        <module>eureka</module>
+        <module>analyzer</module>
+    </modules>
+</project>

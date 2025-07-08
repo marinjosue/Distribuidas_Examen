@@ -1,0 +1,131 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: notification-dispatcher
+  profiles:
+    active: local
+    
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: org.h2.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        show_sql: false
+    show-sql: false
+    open-in-view: false
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:admin}
+    password: ${SPRING_RABBITMQ_PASSWORD:admin}
+    connection-timeout: 30000
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+    metadata-map:
+      management.context-path: /actuator
+
+# Logging configuration
+logging:
+  level:
+    com.eval.conjunta.notification: INFO
+    org.springframework.amqp: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+
+# Custom application properties
+app:
+  notification:
+    email:
+      enabled: true
+      mock-service-url: http://localhost:8083/mock-email
+    sms:
+      enabled: true
+      mock-service-url: http://localhost:8083/mock-sms
+    push:
+      enabled: true
+    scheduling:
+      batch-notifications: 1800000 # Cada 30 minutos
+    priority:
+      critical-immediate: true
+      warning-batch: true
+      info-batch: true
+
+---
+# Docker/Production profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:admin}
+    password: ${SPRING_RABBITMQ_PASSWORD:admin}
+  # Eureka configuration for Docker
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://eureka-server:8761/eureka
+    instance:
+      prefer-ip-address: true
